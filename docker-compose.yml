@@ -1,23 +1,24 @@
-
 services:
   sunkenland:
     build:
       context: .
     container_name: sunkenland-server
     restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
     environment:
       GAME_WORLD_GUID: "51df81c6-8489-43a5-b692-09a2d1fdd5ad"
-      GAME_PASSWORD: "pommeFraiseSGDR"
+      GAME_PASSWORD: ${GAME_PASSWORD:-}
       GAME_REGION: "eu"
       GAME_MAX_PLAYER: "3"
       GAME_SESSION_INVISIBLE: "false"
       GAME_AUTO_UPDATE: "true"
-      GAME_SERVER_NAME: "syn's sunkenkand server"
-    ports:
-      - "27015:27015/udp"
     volumes:
       - ./worlds:/home/gameserver/worlds
-    # Augmenter les privilèges pour résoudre certains problèmes
+      - game:/home/gameserver/sunkenland
+      - prefix:/home/gameserver/.steam/root/steamapps/compatdata
+    ports:
+      - "27015:27015/udp"
     cap_add:
       - SYS_NICE
     deploy:
@@ -26,3 +27,7 @@ services:
           memory: 4G
         reservations:
           memory: 2G
+
+volumes:
+  game:
+  prefix:
