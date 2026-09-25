@@ -9,7 +9,7 @@ services:
       GAME_WORLD_GUID: "51df81c6-8489-43a5-b692-09a2d1fdd5ad"
       GAME_PASSWORD: "pommeFraiseSGDR"
       GAME_REGION: "eu"
-      GAME_MAX_PLAYER: "2"
+      GAME_MAX_PLAYER: "3"
       GAME_SESSION_INVISIBLE: "false"
       GAME_AUTO_UPDATE: "true"
       GAME_SERVER_NAME: "syn's sunkenkand server"

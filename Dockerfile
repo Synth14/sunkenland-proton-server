@@ -60,80 +60,12 @@ RUN mkdir -p ${USER_HOME}/sunkenland ${USER_HOME}/worlds && \
 USER gameserver
 WORKDIR ${USER_HOME}
 
-# Installation du serveur Sunkenland (en spécifiant la plateforme Windows)
-RUN ${USER_HOME}/steamcmd/steamcmd.sh +force_install_dir ${USER_HOME}/sunkenland +login anonymous +@sSteamCmdForcePlatformType windows +app_update ${SUNKENLAND_APP_ID} validate +quit
+# Installation du serveur Sunkenland (en specifiant la plateforme Windows)
+RUN ${USER_HOME}/steamcmd/steamcmd.sh +quit; \
+    ${USER_HOME}/steamcmd/steamcmd.sh +@sSteamCmdForcePlatformType windows +force_install_dir ${USER_HOME}/sunkenland +login anonymous +app_update ${SUNKENLAND_APP_ID} validate +quit
 
-# Création du script de lancement
-RUN echo '#!/bin/bash\n\
-# Configuration de l\'environnement Proton\n\
-export STEAM_COMPAT_CLIENT_INSTALL_PATH=${USER_HOME}/.steam/root\n\
-export STEAM_COMPAT_DATA_PATH=${USER_HOME}/.steam/root/steamapps/compatdata/${SUNKENLAND_APP_ID}\n\
-mkdir -p $STEAM_COMPAT_DATA_PATH\n\
-\n\
-# Mise à jour du jeu si demandé\n\
-if [ "$GAME_AUTO_UPDATE" = "true" ]; then\n\
-  echo "⏳ Vérification des mises à jour du serveur..."\n\
-  ${USER_HOME}/steamcmd/steamcmd.sh +force_install_dir ${USER_HOME}/sunkenland +login anonymous +@sSteamCmdForcePlatformType windows +app_update ${SUNKENLAND_APP_ID} validate +quit\n\
-fi\n\
-\n\
-# Vérification du WorldGUID\n\
-if [ -z "$GAME_WORLD_GUID" ]; then\n\
-  echo "❌ ERREUR: GAME_WORLD_GUID non défini! Le serveur ne peut pas démarrer sans ce paramètre."\n\
-  echo "   Exemple: docker run -e GAME_WORLD_GUID=votre-guid-ici ..."\n\
-  exit 1\n\
-fi\n\
-\n\
-# Lien entre dossier des mondes et emplacement attendu par le jeu\n\
-WORLD_PATH="${USER_HOME}/.steam/root/steamapps/compatdata/${SUNKENLAND_APP_ID}/pfx/drive_c/users/steamuser/AppData/LocalLow/Ambiens/Sunkenland/Worlds"\n\
-mkdir -p "$(dirname "$WORLD_PATH")"\n\
-rm -rf "$WORLD_PATH" 2>/dev/null\n\
-ln -sf ${USER_HOME}/worlds "$WORLD_PATH"\n\
-\n\
-# Plus besoin de créer le .placeholder car les permissions sont corrigées\n\
-# Construction des arguments de lancement\n\
-ARGS="-batchmode -nographics -worldGuid $GAME_WORLD_GUID"\n\
-\n\
-if [ -n "$GAME_PASSWORD" ]; then\n\
-  ARGS="$ARGS -serverPassword $GAME_PASSWORD"\n\
-fi\n\
-\n\
-if [ -n "$GAME_REGION" ]; then\n\
-  ARGS="$ARGS -serverRegion $GAME_REGION"\n\
-fi\n\
-\n\
-if [ -n "$GAME_MAX_PLAYER" ]; then\n\
-  ARGS="$ARGS -serverMaxPlayer $GAME_MAX_PLAYER"\n\
-fi\n\
-\n\
-if [ "$GAME_SESSION_INVISIBLE" = "true" ]; then\n\
-  ARGS="$ARGS -serverSessionInvisible"\n\
-fi\n\
-\n\
-# Démarrage du serveur virtuel X avec configuration améliorée\n\
-export DISPLAY=:0\n\
-Xvfb :0 -screen 0 1024x768x16 -ac & \n\
-XVFB_PID=$!\n\
-\n\
-echo "🚀 Démarrage du serveur Sunkenland avec les arguments:"\n\
-echo "   $ARGS"\n\
-\n\
-# Fonction pour arrêter proprement le serveur\n\
-function cleanup() {\n\
-  echo "🛑 Arrêt du serveur..."\n\
-  kill $XVFB_PID\n\
-  exit 0\n\
-}\n\
-\n\
-# Gestion des signaux d\'arrêt\n\
-trap cleanup SIGINT SIGTERM\n\
-\n\
-# Lancement du jeu avec Proton\n\
-cd ${USER_HOME}/sunkenland\n\
-${USER_HOME}/.steam/root/compatibilitytools.d/${PROTON_VERSION}/proton run Sunkenland.exe $ARGS\n\
-\n\
-# Maintenir le conteneur en vie\n\
-wait $XVFB_PID\n\
-' > ${USER_HOME}/start.sh && chmod +x ${USER_HOME}/start.sh
+# Script de lancement
+COPY --chown=gameserver:gameserver --chmod=755 start.sh ${USER_HOME}/start.sh
 
 # Exposition du port du serveur
 EXPOSE ${SERVER_PORT}/udp
